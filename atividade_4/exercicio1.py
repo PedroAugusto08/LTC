@@ -84,7 +84,7 @@ for s in sistemas:
     if ts_vis is not None:
         plt.axvline(ts_vis, color="red", linestyle="--", label=f"T_s visual = {ts_vis:.3f} s")
 
-    plt.title(f"Resposta ao degrau - {nome} (ω_n={wn:.2f}, ζ={zeta:.3f})")
+    plt.title(f"Resposta ao degrau - {nome}")
     plt.xlabel("Tempo [s]")
     plt.ylabel("Saída y(t)")
     plt.grid(True, ls="--", alpha=0.6)
