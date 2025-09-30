@@ -42,3 +42,26 @@ for K in Ks:
     plt.savefig(fname_y, dpi=200)
     plt.close()
     print(f"Gravado: {fname_y}")
+    
+
+# Figura comparativa (caso (c): ganho K no feedback)
+plt.figure(figsize=(8, 4.8))
+for K in Ks:
+    K_tf = ctrl.tf([K], [1])
+    T_closed = ctrl.feedback(G, K_tf)
+    t_out, y = ctrl.step_response(T_closed, T=t)
+    y_ss = 1.0 / K
+    plt.plot(t_out, y, label=f"K={K} (y_ss={y_ss:.2f})")
+    plt.axhline(y_ss, linestyle='--', linewidth=0.8, color='gray')
+
+plt.xlabel("Tempo (s)")
+plt.ylabel("Saída y(t)")
+plt.title("Comparação respostas — ganho K no feedback")
+plt.grid(True)
+plt.legend()
+plt.ylim(0, 1.05)  # mostra bem K=1 (y_ss=1) e K=10 (y_ss=0.1)
+plt.tight_layout()
+plt.savefig("comparacao_respostas_feedback.png", dpi=200)
+plt.close()
+print("Gravado: comparacao_respostas_feedback.png")
+# ...existing code...
