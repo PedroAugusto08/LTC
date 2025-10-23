@@ -1,55 +1,159 @@
 import control as ctrl
-import matplotlib.pyplot as plt
 import numpy as np
+import matplotlib.pyplot as plt
 
 # numerador e denominador
-num = [1] # 1
+num = [1]   # 1
 den = [1, 6, 5, 0]   # s^3 + 6 s^2 + 5 s
-
 G = ctrl.TransferFunction(num, den)
+print("Planta G(s) =", G)
 
-# valores Ziegler-Nichols para PI
+# malha fechada sem controlador
+Gcl = ctrl.feedback(G, 1)
+
+# simulação
+n_points = 1000
+t_final = 50.0
+t = np.linspace(0, t_final, n_points)
+t_out, y_out = ctrl.step_response(Gcl, T=t)
+
+# função para achar tempo visual (2% de tolerância)
+def first_persistent_time(signal, time, low, high):
+    idxs = np.where((signal >= low) & (signal <= high))[0]
+    if idxs.size == 0:
+        return None
+    for idx in idxs:
+        if np.all((signal[idx:] >= low) & (signal[idx:] <= high)):
+            return time[idx]
+    return None
+
+# limites visuais: inferior 98,2% e teto 102%
+visual_low_pct = 0.982
+visual_high_pct = 1.02
+low = visual_low_pct * 1.0
+high = visual_high_pct * 1.0
+
+# valor final aproximado, overshoot e tempo de acomodação visual
+y_inf = float(y_out[-1])
+Mp = (np.max(y_out) - 1.0) / 1.0 * 100.0  # overshoot em % relativo ao valor final 1
+ts_vis = first_persistent_time(y_out, t_out, low, high)
+if ts_vis is None:
+    idx = np.where(y_out >= low)[0]
+    ts_vis = float(t_out[idx[0]]) if idx.size else None
+
+print("\nResultados da malha fechada sem controlador (realimentação unitária):")
+print(f"Valor final estimado y(∞) ≈ {y_inf:.6f}")
+print(f"Overshoot M_p ≈ {Mp:.4f} %")
+print(f"Tempo de acomodação visual (≈2%) t_s ≈ {ts_vis if ts_vis is not None else np.nan}")
+
+# plot
+plt.figure(figsize=(9,5))
+plt.plot(t_out, y_out, label="G(s) fechado (resposta)", linewidth=2)
+plt.axhline(1.0, color="k", linestyle="--", label="Valor final = 1.00")
+plt.axhline(low, color="orange", linestyle=":", label=f"Inferior {visual_low_pct*100:.2f}% = {low:.3f}")
+plt.axhline(high, color="orange", linestyle=":", label=f"Superior {visual_high_pct*100:.1f}% = {high:.3f}")
+# marcar overshoot (pico) com linha horizontal pontilhada
+idx_peak = int(np.argmax(y_out))
+t_peak = float(t_out[idx_peak])
+y_peak = float(y_out[idx_peak])
+plt.axhline(y_peak, color='red', linestyle=':', linewidth=1.5,
+            label=f"Overshoot = {Mp:.2f}%")
+if ts_vis is not None:
+    plt.axvline(ts_vis, color="red", linestyle="--", label=f"T_s visual = {ts_vis:.3f} s")
+
+plt.title("Resposta ao degrau - Malha fechada sem controlador")
+plt.xlabel("Tempo [s]")
+plt.ylabel("Saída y(t)")
+plt.grid(True, ls="--", alpha=0.6)
+plt.legend(loc='lower right')
+plt.show()
+
+# controlador PI por Ziegler–Nichols
+
+# parâmetros
 Kcr = 30.00
 Pcr = 2.81
-Kp = 0.45 * Kcr   # = 13.5
-Ti = Pcr / 1.2   # ≈ 2.342
-Ki = Kp / Ti   # ≈ 5.763
 
-print(f"Kp = {Kp:.4f}")
-print(f"Ti = {Ti:.4f} s")
-print(f"Ki = {Ki:.4f}")
+# fórmulas de ZN para PI
+Kp = 0.45 * Kcr
+Ti = Pcr / 1.2
+Ki = Kp / Ti
 
-# controlador PI: C(s) = Kp + Ki/s -> (Kp*s + Ki)/s
-C_PI = ctrl.TransferFunction([Kp, Ki], [1, 0])
+print("\nProjeto PI por Ziegler–Nichols:")
+print(f"Kcr = {Kcr:.2f}, Pcr = {Pcr:.2f}")
+print(f"Kp = 0.45*Kcr = {Kp:.6f}")
+print(f"Ti = Pcr/1.2  = {Ti:.6f}")
+print(f"Ki = Kp/Ti    = {Ki:.6f}")
+
+# controlador PI: C(s) = Kp + Ki/s = (Kp*s + Ki)/s
+Cpi = ctrl.TransferFunction([Kp, Ki], [1, 0])
 
 # malha fechada com PI
-Gcl_PI = ctrl.feedback(C_PI * G, 1)
-
-# malha fechada com ganho crítico
-Gcl_Kcr = ctrl.feedback(Kcr * G, 1)
+Gcl_pi = ctrl.feedback(Cpi * G, 1)
 
 # resposta ao degrau
-t = np.linspace(0, 40, 5000)
-t_PI, y_PI = ctrl.step_response(Gcl_PI, T=t)
-t_Kcr, y_Kcr = ctrl.step_response(Gcl_Kcr, T=t)
+t_pi, y_pi = ctrl.step_response(Gcl_pi, T=t)
 
-# gráfico 1 (PI)
-plt.figure(figsize=(10,4))
-plt.plot(t_PI, y_PI, label='Controlador PI (Ziegler-Nichols)')
-plt.title('Resposta ao Degrau com Controlador PI (Ziegler-Nichols)')
-plt.xlabel('Tempo (s)')
-plt.ylabel('Saída')
-plt.grid(True)
+# métricas
+y_inf_pi = float(y_pi[-1])
+Mp_pi = (np.max(y_pi) - 1.0) / 1.0 * 100.0
+ts_vis_pi = first_persistent_time(y_pi, t_pi, low, high)
+if ts_vis_pi is None:
+    idx_pi = np.where(y_pi >= low)[0]
+    ts_vis_pi = float(t_pi[idx_pi[0]]) if idx_pi.size else None
+
+print("\nResultados com PI:")
+print(f"Valor final estimado y(∞) ≈ {y_inf_pi:.6f}")
+print(f"Overshoot M_p ≈ {Mp_pi:.4f} %")
+print(f"Tempo de acomodação visual (≈2%) t_s ≈ {ts_vis_pi if ts_vis_pi is not None else np.nan}")
+
+# gráfico resposta com PI
+plt.figure(figsize=(9,5))
+plt.plot(t_pi, y_pi, label="G(s) com PI (resposta)", linewidth=2)
+plt.axhline(1.0, color="k", linestyle="--", label="Valor final = 1.00")
+plt.axhline(low, color="orange", linestyle=":", label=f"Inferior {visual_low_pct*100:.2f}% = {low:.3f}")
+plt.axhline(high, color="orange", linestyle=":", label=f"Superior {visual_high_pct*100:.1f}% = {high:.3f}")
+# marcar overshoot (pico) com PI com linha horizontal pontilhada
+idx_peak_pi = int(np.argmax(y_pi))
+t_peak_pi = float(t_pi[idx_peak_pi])
+y_peak_pi = float(y_pi[idx_peak_pi])
+plt.axhline(y_peak_pi, color='red', linestyle=':', linewidth=1.5,
+            label=f"Overshoot = {Mp_pi:.2f}%")
+if ts_vis_pi is not None:
+    plt.axvline(ts_vis_pi, color="red", linestyle="--", label=f"T_s visual = {ts_vis_pi:.3f} s")
+
+plt.title("Resposta ao degrau - Malha fechada com PI")
+plt.xlabel("Tempo [s]")
+plt.ylabel("Saída y(t)")
+plt.grid(True, ls="--", alpha=0.6)
 plt.legend()
 plt.show()
 
-# gráfico 2 (comparação)
-plt.figure(figsize=(10,4))
-plt.plot(t_PI, y_PI, label='Controlador PI (Ziegler-Nichols)')
-plt.plot(t_Kcr, y_Kcr, label='Controlador Proporcional com Kcr = 30', linestyle='--')
-plt.title('Comparação: PI vs Proporcional com Kcr')
-plt.xlabel('Tempo (s)')
-plt.ylabel('Saída')
-plt.grid(True)
+# gráfico comparativo (sem controlador vs PI)
+plt.figure(figsize=(9,5))
+plt.plot(t_out, y_out, label="Sem controlador", linewidth=2)
+plt.plot(t_pi, y_pi, label="Com PI", linewidth=2)
+
+# Linhas de referência e bandas com labels no formato pedido
+plt.axhline(1.0, color="k", linestyle="--", label="Valor final")
+plt.axhline(low, color="orange", linestyle=":", label=f"Inferior 98.2% = {low:.3f}")
+plt.axhline(high, color="orange", linestyle=":", label=f"Superior 102.0% = {high:.2f}")
+
+# Overshoot (linhas horizontais) com labels específicos
+plt.axhline(y_peak, color='purple', linestyle=':', linewidth=1.5, label=f"M_p sem ctrl = {Mp:.2f}%")
+plt.axhline(y_peak_pi, color='red', linestyle=':', linewidth=1.5, label=f"M_p com PI = {Mp_pi:.2f}%")
+
+# Marcar T_s visual dos dois casos com labels
+if ts_vis is not None:
+    plt.axvline(ts_vis, color='purple', linestyle='--', linewidth=1,
+                label=f"T_s vis sem ctrl = {ts_vis:.3f} s")
+if ts_vis_pi is not None:
+    plt.axvline(ts_vis_pi, color='red', linestyle='--', linewidth=1,
+                label=f"T_s vis com PI = {ts_vis_pi:.3f} s")
+
+plt.title("Comparação das respostas — Sem controlador vs PI")
+plt.xlabel("Tempo [s]")
+plt.ylabel("Saída y(t)")
+plt.grid(True, ls="--", alpha=0.6)
 plt.legend()
 plt.show()
