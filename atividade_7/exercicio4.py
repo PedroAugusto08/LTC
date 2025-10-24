@@ -6,7 +6,6 @@ import matplotlib.pyplot as plt
 num = [1]
 den = [1, 6, 5, 0]
 G = ctrl.TransferFunction(num, den)
-print("Planta G(s) =", G)
 
 # simulação
 n_points = 1000
@@ -29,7 +28,7 @@ visual_high_pct = 1.02
 low = visual_low_pct * 1.0
 high = visual_high_pct * 1.0
 
-# parâmetros críticos (para Ziegler–Nichols)
+# parâmetros críticos
 Kcr = 30.00
 Pcr = 2.81
 
