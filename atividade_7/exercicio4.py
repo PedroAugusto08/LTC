@@ -53,7 +53,7 @@ if ts_vis_pid is None:
 	idx_pid = np.where(y_pid >= low)[0]
 	ts_vis_pid = float(t_pid[idx_pid[0]]) if idx_pid.size else None
 
-print("\nCom PID (ZN):")
+print("\nCom PID:")
 print(f"Kp={Kp_pid:.6f}, Ti={Ti_pid:.6f}, Td={Td_pid:.6f}, Ki={Ki_pid:.6f}, Kd={Kd_pid:.6f}")
 print(f"y(∞) ≈ {y_inf_pid:.6f}")
 print(f"M_p ≈ {Mp_pid:.4f}%")
@@ -61,7 +61,7 @@ print(f"T_s vis ≈ {ts_vis_pid if ts_vis_pid is not None else np.nan}")
 
 # gráfico resposta com PID
 plt.figure(figsize=(9,5))
-plt.plot(t_pid, y_pid, label="G(s) com PID (ZN)", linewidth=2)
+plt.plot(t_pid, y_pid, label="G(s) com PID", linewidth=2)
 plt.axhline(1.0, color="k", linestyle="--", label="Valor final = 1.00")
 plt.axhline(low, color="orange", linestyle=":", label=f"Inferior {visual_low_pct*100:.1f}% = {low:.3f}")
 plt.axhline(high, color="orange", linestyle=":", label=f"Superior {visual_high_pct*100:.1f}% = {high:.2f}")
@@ -70,7 +70,7 @@ y_peak_pid_plot = float(y_pid[idx_peak_pid_plot])
 plt.axhline(y_peak_pid_plot, color='red', linestyle=':', linewidth=1.5, label=f"Overshoot = {Mp_pid:.2f}%")
 if ts_vis_pid is not None:
 	plt.axvline(ts_vis_pid, color='red', linestyle='--', linewidth=1, label=f"T_s visual = {ts_vis_pid:.3f} s")
-plt.title("Resposta ao degrau — Com PID (ZN)")
+plt.title("Resposta ao degrau — Com PID")
 plt.xlabel("Tempo [s]")
 plt.ylabel("Saída y(t)")
 plt.grid(True, ls="--", alpha=0.6)
