@@ -128,32 +128,3 @@ plt.ylabel("Saída y(t)")
 plt.grid(True, ls="--", alpha=0.6)
 plt.legend()
 plt.show()
-
-# gráfico comparativo (sem controlador vs PI)
-plt.figure(figsize=(9,5))
-plt.plot(t_out, y_out, label="Sem controlador", linewidth=2)
-plt.plot(t_pi, y_pi, label="Com PI", linewidth=2)
-
-# Linhas de referência e bandas com labels no formato pedido
-plt.axhline(1.0, color="k", linestyle="--", label="Valor final")
-plt.axhline(low, color="orange", linestyle=":", label=f"Inferior 98.2% = {low:.3f}")
-plt.axhline(high, color="orange", linestyle=":", label=f"Superior 102.0% = {high:.2f}")
-
-# Overshoot (linhas horizontais) com labels específicos
-plt.axhline(y_peak, color='purple', linestyle=':', linewidth=1.5, label=f"M_p sem ctrl = {Mp:.2f}%")
-plt.axhline(y_peak_pi, color='red', linestyle=':', linewidth=1.5, label=f"M_p com PI = {Mp_pi:.2f}%")
-
-# Marcar T_s visual dos dois casos com labels
-if ts_vis is not None:
-    plt.axvline(ts_vis, color='purple', linestyle='--', linewidth=1,
-                label=f"T_s vis sem ctrl = {ts_vis:.3f} s")
-if ts_vis_pi is not None:
-    plt.axvline(ts_vis_pi, color='red', linestyle='--', linewidth=1,
-                label=f"T_s vis com PI = {ts_vis_pi:.3f} s")
-
-plt.title("Comparação das respostas — Sem controlador vs PI")
-plt.xlabel("Tempo [s]")
-plt.ylabel("Saída y(t)")
-plt.grid(True, ls="--", alpha=0.6)
-plt.legend()
-plt.show()
