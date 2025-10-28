@@ -12,8 +12,8 @@ print("Planta G(s) =", G)
 Gcl = ctrl.feedback(G, 1)
 
 # simulação
-n_points = 1000
-t_final = 50.0
+n_points = 30000
+t_final = 300.0
 t = np.linspace(0, t_final, n_points)
 t_out, y_out = ctrl.step_response(Gcl, T=t)
 
@@ -35,16 +35,13 @@ high = visual_high_pct * 1.0
 
 # valor final aproximado, overshoot e tempo de acomodação visual
 y_inf = float(y_out[-1])
-Mp = (np.max(y_out) - 1.0) / 1.0 * 100.0  # overshoot em % relativo ao valor final 1
+Mp = (np.max(y_out) - 1.0) / 1.0 * 100.0
 ts_vis = first_persistent_time(y_out, t_out, low, high)
-if ts_vis is None:
-    idx = np.where(y_out >= low)[0]
-    ts_vis = float(t_out[idx[0]]) if idx.size else None
 
 print("\nResultados da malha fechada sem controlador (realimentação unitária):")
 print(f"Valor final estimado y(∞) ≈ {y_inf:.6f}")
 print(f"Overshoot M_p ≈ {Mp:.4f} %")
-print(f"Tempo de acomodação visual (≈2%) t_s ≈ {ts_vis if ts_vis is not None else np.nan}")
+print(f"Tempo de acomodação visual (≈2%) t_s ≈ {ts_vis:.3f} s")
 
 # plot
 plt.figure(figsize=(9,5))
@@ -58,8 +55,8 @@ t_peak = float(t_out[idx_peak])
 y_peak = float(y_out[idx_peak])
 plt.axhline(y_peak, color='red', linestyle=':', linewidth=1.5,
             label=f"Overshoot = {Mp:.2f}%")
-if ts_vis is not None:
-    plt.axvline(ts_vis, color="red", linestyle="--", label=f"T_s visual = {ts_vis:.3f} s")
+plt.axvline(ts_vis, color="red", linestyle="--", label=f"T_s visual = {ts_vis:.3f} s")
+
 
 plt.title("Resposta ao degrau - Malha fechada sem controlador")
 plt.xlabel("Tempo [s]")
@@ -98,14 +95,11 @@ t_pi, y_pi = ctrl.step_response(Gcl_pi, T=t)
 y_inf_pi = float(y_pi[-1])
 Mp_pi = (np.max(y_pi) - 1.0) / 1.0 * 100.0
 ts_vis_pi = first_persistent_time(y_pi, t_pi, low, high)
-if ts_vis_pi is None:
-    idx_pi = np.where(y_pi >= low)[0]
-    ts_vis_pi = float(t_pi[idx_pi[0]]) if idx_pi.size else None
 
 print("\nResultados com PI:")
 print(f"Valor final estimado y(∞) ≈ {y_inf_pi:.6f}")
 print(f"Overshoot M_p ≈ {Mp_pi:.4f} %")
-print(f"Tempo de acomodação visual (≈2%) t_s ≈ {ts_vis_pi if ts_vis_pi is not None else np.nan}")
+print(f"Tempo de acomodação visual (≈2%) t_s ≈ {ts_vis_pi:.3f} s")
 
 # gráfico resposta com PI
 plt.figure(figsize=(9,5))
@@ -119,8 +113,7 @@ t_peak_pi = float(t_pi[idx_peak_pi])
 y_peak_pi = float(y_pi[idx_peak_pi])
 plt.axhline(y_peak_pi, color='red', linestyle=':', linewidth=1.5,
             label=f"Overshoot = {Mp_pi:.2f}%")
-if ts_vis_pi is not None:
-    plt.axvline(ts_vis_pi, color="red", linestyle="--", label=f"T_s visual = {ts_vis_pi:.3f} s")
+plt.axvline(ts_vis_pi, color="red", linestyle="--", label=f"T_s visual = {ts_vis_pi:.3f} s")
 
 plt.title("Resposta ao degrau - Malha fechada com PI")
 plt.xlabel("Tempo [s]")
